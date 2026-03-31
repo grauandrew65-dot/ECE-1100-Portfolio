@@ -1,0 +1,1662 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ECE Portfolio</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--surface:#f5f5f5;--border:#e0e0e0;--border-dark:#bbb;
+  --ink:#111;--muted:#555;--light:#999;--font:Arial,Helvetica,sans-serif;
+  --navh:83px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.7}
+
+/* ── SCROLL FIX: every section top lands exactly under the fixed nav ── */
+section{scroll-margin-top:var(--navh)}
+#home{scroll-margin-top:0}
+
+/* BANNER */
+.edit-banner{position:fixed;top:0;left:0;right:0;z-index:400;background:#111;color:#fff;padding:6px 1rem;display:flex;align-items:center;justify-content:center;gap:12px;font-size:11px;letter-spacing:.05em}
+.bbtn{padding:3px 10px;border:1px solid #555;background:none;color:#ccc;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;font-family:var(--font)}
+.bbtn:hover{border-color:#fff;color:#fff}
+.bbtn.active{background:#fff;color:#111;border-color:#fff}
+.bbtn.green{border-color:#4a4;color:#8d8}
+.bbtn.green:hover{border-color:#6c6;color:#afa}
+
+/* NAV */
+nav{position:fixed;top:29px;left:0;right:0;z-index:300;display:flex;justify-content:space-between;align-items:center;padding:0 3rem;height:54px;background:#fff;border-bottom:1px solid var(--border)}
+.nav-name{font-size:15px;font-weight:bold}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{font-size:12px;color:var(--muted);text-decoration:none;text-transform:uppercase;letter-spacing:.08em;transition:color .15s}
+.nav-links a:hover{color:var(--ink)}
+
+/* SECTIONS */
+section{padding:5rem 2rem;border-top:1px solid var(--border);text-align:center}
+#home{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:calc(var(--navh) + 3rem);border-top:none}
+
+/* EDITABLE */
+[contenteditable]{outline:none;border-radius:2px;cursor:text;transition:background .15s}
+[contenteditable]:hover{background:#f0f0f0}
+[contenteditable]:focus{background:#eaeaea;box-shadow:0 0 0 1.5px #aaa}
+[contenteditable].block{display:block}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem}
+
+/* ── HOME ── */
+.home-inner{display:flex;flex-direction:column;align-items:center;gap:2.5rem;max-width:800px;width:100%}
+.home-top{display:flex;align-items:flex-start;gap:2.5rem;text-align:left;width:100%}
+
+/* HEADSHOT — proportional to uploaded image, resizable */
+.headshot-wrap{
+  flex-shrink:0;position:relative;
+  width:200px; /* default — JS adjusts after photo loads */
+}
+.headshot-box{
+  width:100%;background:var(--surface);
+  border:1px solid var(--border-dark);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;position:relative;overflow:hidden;
+}
+.headshot-box.empty{height:220px}
+.headshot-box img{display:none;width:100%;height:auto;position:relative;vertical-align:top}
+.headshot-box.has-photo img{display:block}
+.headshot-box.has-photo .hs-ph{display:none}
+.headshot-box:hover .hs-over{opacity:1}
+.hs-over{position:absolute;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;font-size:11px;color:#fff;letter-spacing:.06em;text-transform:uppercase;pointer-events:none}
+.hs-ph{display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:1rem}
+.hs-ph span{font-size:11px;color:var(--light);text-align:center}
+#headshot-input{display:none}
+/* HS drag bar */
+.hs-drag-bar{
+  display:none;width:100%;height:16px;cursor:grab;
+  background:repeating-linear-gradient(90deg,#ccc 0,#ccc 3px,transparent 3px,transparent 8px);
+  border-radius:2px 2px 0 0;flex-shrink:0;
+}
+.hs-drag-bar:active{cursor:grabbing}
+body.edit-mode .hs-drag-bar{display:block}
+body.edit-mode .headshot-wrap{border:1px dashed #ccc;border-radius:3px;padding-top:0}
+
+/* Resize handle on headshot */
+.hs-resizer{
+  position:absolute;bottom:0;right:0;
+  width:18px;height:18px;cursor:se-resize;
+  background:linear-gradient(135deg,transparent 50%,var(--border-dark) 50%);
+  display:none;z-index:10;
+}
+body.edit-mode .hs-resizer{display:block}
+
+/* HOME TEXT — draggable in edit mode */
+.home-text{flex:1;position:relative;min-width:0}
+.home-text .drag-bar{
+  display:none;position:absolute;top:-18px;left:0;right:0;height:16px;
+  background:repeating-linear-gradient(90deg,#ccc 0,#ccc 3px,transparent 3px,transparent 8px);
+  cursor:grab;border-radius:2px;
+}
+.home-text .drag-bar:active{cursor:grabbing}
+body.edit-mode .home-text{padding-top:18px;border:1px dashed #ccc;padding:20px 8px 8px;border-radius:3px}
+body.edit-mode .home-text .drag-bar{display:block}
+/* snap grid indicator */
+body.edit-mode .home-top{position:relative}
+
+h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin-bottom:.4rem;font-weight:bold}
+.hero-role{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+.hero-intro{color:var(--muted);font-size:14px;max-width:440px}
+h2{font-size:clamp(1.5rem,3vw,2rem);margin-bottom:.4rem;font-weight:bold}
+.section-sub{font-size:14px;color:var(--muted);max-width:520px;margin:0 auto 2.5rem}
+
+/* ABOUT */
+#about{background:var(--surface)}
+.about-body{max-width:620px;margin:0 auto;text-align:left}
+.about-body p{color:var(--muted);margin-bottom:1rem;font-size:15px}
+
+/* ABOUT PHOTO GALLERY */
+.about-gallery{
+  max-width:820px;margin:2.5rem auto 0;
+}
+.gallery-canvas{
+  position:relative;
+  width:100%;
+  min-height:20px;
+}
+body.edit-mode .gallery-canvas{
+  background:repeating-linear-gradient(0deg,transparent,transparent 39px,var(--border) 39px,var(--border) 40px),
+             repeating-linear-gradient(90deg,transparent,transparent 39px,var(--border) 39px,var(--border) 40px);
+  background-color:#f9f9f9;
+  border:1px dashed var(--border-dark);
+  min-height:200px;
+}
+.gallery-item{
+  position:absolute;
+  cursor:default;
+  user-select:none;
+}
+.gallery-item img{
+  display:block;width:100%;height:100%;
+  object-fit:cover;pointer-events:none;
+}
+/* drag bar — full top strip */
+.gal-drag-bar{
+  display:none;position:absolute;top:0;left:0;right:18px;
+  height:18px;cursor:grab;z-index:10;
+  background:rgba(0,0,0,.45);
+  align-items:center;justify-content:center;
+}
+.gal-drag-bar::after{content:'⠿';color:#fff;font-size:13px;position:absolute;left:50%;transform:translateX(-50%);}
+.gal-drag-bar:active{cursor:grabbing}
+body.edit-mode .gal-drag-bar{display:flex}
+/* resize handle — bottom right corner */
+.gal-resizer{
+  display:none;position:absolute;bottom:0;right:0;
+  width:18px;height:18px;cursor:se-resize;z-index:10;
+  background:rgba(0,0,0,.45);
+}
+.gal-resizer::after{
+  content:'';display:block;
+  width:0;height:0;
+  border-style:solid;
+  border-width:0 0 10px 10px;
+  border-color:transparent transparent #fff transparent;
+  position:absolute;bottom:2px;right:2px;
+}
+body.edit-mode .gal-resizer{display:block}
+/* delete button */
+.gal-del{
+  display:none;position:absolute;top:0;right:0;
+  width:18px;height:18px;z-index:11;
+  background:rgba(180,0,0,.8);color:#fff;border:none;
+  font-size:13px;line-height:18px;text-align:center;
+  cursor:pointer;padding:0;
+}
+body.edit-mode .gal-del{display:block}
+.gallery-add-btn{
+  display:none;
+  margin-top:10px;
+  padding:.45rem 1.2rem;border:1px dashed var(--border-dark);
+  background:transparent;font-size:11px;letter-spacing:.07em;
+  text-transform:uppercase;cursor:pointer;color:var(--muted);
+  font-family:var(--font);
+  transition:border-color .15s,color .15s;
+}
+.gallery-add-btn:hover{border-color:var(--ink);color:var(--ink)}
+body.edit-mode .gallery-add-btn{display:inline-block}
+
+/* GOALS */
+#goals{background:#fff}
+.goals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1px;max-width:900px;margin:0 auto;text-align:left;background:var(--border);border:1px solid var(--border)}
+.goal{padding:1.8rem;background:var(--surface);position:relative;display:flex;flex-direction:column;gap:.5rem}
+.goal-num{font-size:2rem;font-weight:bold;color:var(--border-dark);line-height:1}
+.goal h3{font-size:13px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase}
+.goal p{font-size:13px;color:var(--muted);line-height:1.75;flex:1}
+.goal-del{position:absolute;top:8px;right:8px;background:none;border:none;font-size:13px;color:var(--light);cursor:pointer;font-family:var(--font);padding:2px 6px;transition:color .15s}
+.goal-del:hover{color:#c00}
+
+/* PROJECTS */
+#projects{background:var(--surface)}
+.projects-list{display:flex;flex-direction:column;gap:2px;max-width:1100px;margin:0 auto;text-align:left}
+.proj-card{background:#fff;border:1px solid var(--border);display:grid;grid-template-columns:600px 1fr;min-height:560px;position:relative}
+.proj-card.drag-over{outline:2px dashed var(--ink)}
+.drag-handle{position:absolute;top:8px;left:8px;z-index:30;width:26px;height:26px;display:none;align-items:center;justify-content:center;cursor:grab;background:rgba(0,0,0,.6);border-radius:2px;color:#fff;font-size:15px;user-select:none}
+body.edit-mode .drag-handle{display:flex}
+
+/* MEDIA */
+.proj-media{position:relative;background:#d0d0d0;border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:560px;overflow:hidden}
+
+/* Main viewer area */
+.proj-viewer{flex:1;position:relative;min-height:0;overflow:hidden;background:#d0d0d0}
+.proj-viewer canvas{display:block;width:100%!important;height:100%!important;position:absolute;inset:0;cursor:grab;touch-action:none}
+.proj-viewer canvas:active{cursor:grabbing}
+.proj-viewer .media-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.proj-viewer .media-empty span{font-size:12px;color:var(--light)}
+
+/* Active media slot (image or video) */
+.proj-active-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.proj-active-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000}
+
+.viewer-hint{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:3px 8px;border-radius:2px;pointer-events:none;letter-spacing:.04em;z-index:5}
+
+/* Thumbnail strip */
+.proj-thumbs{
+  flex-shrink:0;display:flex;gap:4px;padding:6px;
+  background:#1a1a1a;overflow-x:auto;min-height:0;
+}
+.proj-thumbs:empty{display:none}
+.proj-thumb{
+  flex-shrink:0;width:56px;height:44px;
+  object-fit:cover;cursor:pointer;opacity:.55;
+  border:2px solid transparent;transition:opacity .15s,border-color .15s;
+}
+.proj-thumb.video-thumb{
+  background:#333;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:18px;
+}
+.proj-thumb.active{opacity:1;border-color:#fff}
+.proj-thumb:hover{opacity:.85}
+.thumb-del{
+  display:none;position:absolute;top:0;right:0;
+  width:16px;height:16px;background:rgba(180,0,0,.85);
+  color:#fff;border:none;font-size:11px;line-height:16px;
+  text-align:center;cursor:pointer;padding:0;z-index:5;
+}
+.proj-thumb-wrap{position:relative;flex-shrink:0}
+body.edit-mode .thumb-del{display:block}
+
+/* Controls bar */
+.media-controls{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid var(--border);background:#fff}
+.media-controls button{padding:4px 10px;border:1px solid var(--border-dark);background:#fff;font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);font-family:var(--font);transition:background .15s,color .15s}
+.media-controls button:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.media-file-link{font-size:11px;color:var(--muted);text-decoration:underline;display:none;margin-left:auto}
+.media-file-link.on{display:inline}
+.proj-body{padding:2rem 2rem 1.5rem;display:flex;flex-direction:column;gap:.8rem}
+.proj-body h3{font-size:1.2rem;font-weight:bold;line-height:1.2}
+.proj-body p{font-size:14px;color:var(--muted);line-height:1.75;flex:1;min-height:280px}
+.proj-footer{display:flex;align-items:center;justify-content:space-between;margin-top:.5rem;padding-top:.8rem;border-top:1px solid var(--border)}
+.proj-footer span{font-size:11px;color:var(--light)}
+.del-btn{background:#fff;border:1px solid #ddd;font-size:11px;color:#999;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font);padding:5px 12px;transition:border-color .15s,color .15s}
+.del-btn:hover{border-color:#c00;color:#c00;background:#fff9f9}
+.add-proj-wrap{max-width:1100px;margin:1.5rem auto 0;text-align:left}
+.add-proj-btn{padding:.65rem 1.8rem;border:1px solid var(--ink);background:#fff;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;color:var(--ink);font-family:var(--font);transition:background .15s,color .15s}
+.add-proj-btn:hover{background:var(--ink);color:#fff}
+.mtl-prompt{position:absolute;inset:0;background:rgba(245,245,245,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:40;padding:1.5rem;text-align:center}
+.mtl-prompt p{font-size:13px;color:#333;max-width:260px;line-height:1.5}
+.loading-over{position:absolute;inset:0;background:rgba(208,208,208,.88);display:flex;align-items:center;justify-content:center;z-index:35;font-size:12px;color:var(--muted);letter-spacing:.06em}
+
+/* CONTACT */
+/* CONTACT */
+/* RESUME */
+#resume{background:#fff}
+.resume-wrap{max-width:860px;margin:0 auto}
+.resume-upload-area{
+  border:2px dashed var(--border-dark);background:var(--surface);
+  padding:3rem 2rem;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  transition:border-color .15s,background .15s;
+}
+.resume-upload-area:hover{border-color:#888;background:#eee}
+.resume-upload-area span{font-size:13px;color:var(--muted);letter-spacing:.04em}
+.resume-toolbar{
+  display:flex;align-items:center;gap:10px;
+  padding:.6rem 1rem;background:var(--surface);
+  border:1px solid var(--border);border-bottom:none;
+  flex-wrap:wrap;
+}
+.resume-filename{font-size:12px;color:var(--muted);flex:1;letter-spacing:.04em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume-download-btn{
+  padding:5px 14px;background:var(--ink);color:#fff;
+  font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  text-decoration:none;border:1px solid var(--ink);
+  transition:background .15s;flex-shrink:0;
+}
+.resume-download-btn:hover{background:#333}
+.resume-change-btn{
+  padding:5px 12px;background:#fff;color:var(--muted);
+  border:1px solid var(--border-dark);font-size:11px;
+  letter-spacing:.07em;text-transform:uppercase;cursor:pointer;
+  font-family:var(--font);flex-shrink:0;transition:background .15s,color .15s;
+}
+.resume-change-btn:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.resume-frame-wrap{border:1px solid var(--border);background:#525659;width:100%;padding:20px 0;overflow-y:visible}
+.resume-canvas-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.resume-canvas-wrap canvas{max-width:100%;box-shadow:0 2px 12px rgba(0,0,0,.4);display:block;width:100%!important;height:auto!important}
+
+#contact{background:var(--surface)}
+.contact-wrap{max-width:520px;margin:0 auto;text-align:center}
+.contact-intro{color:var(--muted);margin-bottom:2rem;font-size:15px}
+.contact-list{display:flex;flex-direction:column;gap:1px;margin-bottom:1.2rem;text-align:left}
+.c-item{
+  display:flex;align-items:center;gap:0;
+  border:1px solid var(--border);background:var(--surface);
+  position:relative;
+}
+.c-item-drag{
+  width:28px;flex-shrink:0;display:none;align-items:center;justify-content:center;
+  cursor:grab;color:var(--light);font-size:14px;align-self:stretch;
+  border-right:1px solid var(--border);user-select:none;
+}
+.c-item-drag:active{cursor:grabbing}
+body.edit-mode .c-item-drag{display:flex}
+.c-item-body{flex:1;padding:.75rem 1rem;display:flex;flex-direction:column;gap:2px}
+.c-item-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.c-item-val{font-size:14px;color:var(--ink)}
+.c-item-del{
+  width:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--light);font-size:16px;align-self:stretch;
+  border-left:1px solid var(--border);background:#fff;
+  transition:color .15s,background .15s;
+}
+.c-item-del:hover{color:#c00;background:#fff5f5}
+.c-item.drag-over{outline:2px dashed var(--ink)}
+.add-contact-btn{
+  padding:.5rem 1.4rem;border:1px solid var(--ink);background:#fff;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;color:var(--ink);font-family:var(--font);
+  transition:background .15s,color .15s;
+}
+.add-contact-btn:hover{background:var(--ink);color:#fff}
+footer{padding:1.5rem 2rem;border-top:1px solid var(--border);text-align:center;background:var(--ink)}
+footer p{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.06em}
+
+@media(max-width:800px){
+  nav{padding:0 1rem}.nav-links{gap:1rem}
+  section{padding:4rem 1rem}
+  .home-top{flex-direction:column;align-items:center;text-align:center}
+  .goals-grid,.stats{grid-template-columns:1fr}
+  .proj-card{grid-template-columns:1fr;grid-template-rows:400px auto}
+  .proj-media{border-right:none;border-bottom:1px solid var(--border);min-height:400px}
+}
+</style>
+</head>
+<body>
+
+<div class="edit-banner">
+  <span>✏ Click any text to edit</span>
+  <button class="bbtn" id="drag-btn" onclick="toggleEdit()">Enable Drag to Reorder</button>
+  <span id="drag-hint" style="color:#777;display:none">Grab ⠿ to reorder projects</span>
+  <span id="save-ind" style="color:#8f8;font-size:11px;opacity:0;transition:opacity .4s;letter-spacing:.04em">✓ Auto-saved</span>
+  <button class="bbtn green" onclick="exportPage()">⬇ Export & Save</button>
+</div>
+
+<nav>
+  <div class="nav-name" contenteditable="" spellcheck="false">Your Name</div>
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#goals">Goals</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#resume">Resume</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<section id="home">
+  <div class="home-inner">
+    <div class="home-top" id="home-top">
+
+      <!-- HEADSHOT -->
+      <div class="headshot-wrap" id="hs-wrap">
+        <div class="hs-drag-bar" id="hs-drag-bar"></div>
+        <div class="headshot-box empty" id="headshot-box" onclick="document.getElementById('headshot-input').click()">
+          <img id="headshot-img" src="" alt="">
+          <div class="hs-over">Change Photo</div>
+          <div class="hs-ph">
+            <svg width="34" height="34" fill="none" stroke="#aaa" stroke-width="1.4" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>
+            <span>Click to upload<br>your photo</span>
+          </div>
+        </div>
+        <div class="hs-resizer" id="hs-resizer" title="Drag to resize"></div>
+      </div>
+      <input type="file" id="headshot-input" accept="image/*">
+
+      <!-- HOME TEXT (draggable in edit mode) -->
+      <div class="home-text" id="home-text">
+        <div class="drag-bar" id="text-drag-bar"></div>
+        <p class="eyebrow" contenteditable="" spellcheck="false">ECE 1100 · ePortfolio · Georgia Tech</p>
+        <h1 contenteditable="" spellcheck="false">Your Name</h1>
+        <p class="hero-role"><span contenteditable="" spellcheck="false">Electrical &amp; Computer Engineering · Class of 2028</span></p>
+        <p class="hero-intro"><span contenteditable="" class="block">First-year ECE student at Georgia Tech. Interested in embedded systems, signal processing, and the intersection of hardware and software.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <p class="eyebrow" contenteditable="" spellcheck="false">01 — About Me</p>
+  <h2 contenteditable="" spellcheck="false">My Story</h2>
+  <p class="section-sub" contenteditable="" spellcheck="false">A little about who I am and what drives me.</p>
+  <div class="about-body">
+    <p contenteditable="" class="block">I'm originally from Atlanta, GA. Growing up in a tech-forward city sparked my curiosity about how complex systems work — from traffic networks to power grids. I chose ECE at Georgia Tech because I wanted to be at the center of where hardware meets software.</p>
+    <p contenteditable="" class="block">Outside of academics, I enjoy rock climbing, building mechanical keyboards, and tinkering with microcontrollers. I'm also involved in GT's Robotics Club.</p>
+    <p contenteditable="" class="block">This ePortfolio is my professional hub — a living record of my work, growth, and goals throughout my time at GT.</p>
+  </div>
+  <div class="about-gallery" id="about-gallery">
+    <div class="gallery-canvas" id="gallery-canvas"></div>
+    <input type="file" id="gallery-input" accept="image/*" multiple="" style="display:none" onchange="handleGalleryUpload(this)">
+    <button class="gallery-add-btn" onclick="document.getElementById('gallery-input').click()">+ Add Photos</button>
+  </div>
+</section>
+
+<section id="goals">
+  <p class="eyebrow" contenteditable="" spellcheck="false">02 — Career Goals</p>
+  <h2 contenteditable="" spellcheck="false">Where I'm Headed</h2>
+  <p class="section-sub" contenteditable="" spellcheck="false">My short, mid, and long-term vision for my engineering career.</p>
+  <div class="goals-grid" id="goals-grid"></div>
+  <div style="max-width:900px;margin:1.2rem auto 0;text-align:left">
+    <button class="add-proj-btn" onclick="addGoal()">+ Add Goal</button>
+  </div>
+</section>
+
+<section id="projects">
+  <p class="eyebrow" contenteditable="" spellcheck="false">03 — Technical Projects</p>
+  <h2 contenteditable="" spellcheck="false">My Work</h2>
+  <p class="section-sub" contenteditable="" spellcheck="false">A growing portfolio of projects from my time at Georgia Tech and beyond.</p>
+  <div class="projects-list" id="proj-list"></div>
+  <div class="add-proj-wrap">
+    <button class="add-proj-btn" onclick="addProj()">+ Add Project</button>
+  </div>
+</section>
+
+<section id="resume">
+  <p class="eyebrow" contenteditable="" spellcheck="false">04 — Resume</p>
+  <h2 contenteditable="" spellcheck="false">My Resume</h2>
+  <p class="section-sub" contenteditable="" spellcheck="false">View or download my current resume below.</p>
+  <div class="resume-wrap">
+    <div class="resume-upload-area" id="resume-upload-area" onclick="document.getElementById('resume-input').click()">
+      <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.4" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="12" x2="12" y2="18"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+      <span>Click to upload your resume PDF</span>
+    </div>
+    <input type="file" id="resume-input" accept=".pdf" style="display:none" onchange="handleResume(this)">
+    <div class="resume-viewer" id="resume-viewer" style="display:none">
+      <div class="resume-toolbar">
+        <span class="resume-filename" id="resume-filename">resume.pdf</span>
+        <a class="resume-download-btn" id="resume-download-btn" href="#" download="">⬇ Download PDF</a>
+        <button class="resume-change-btn" onclick="document.getElementById('resume-input').click()">Change PDF</button>
+      </div>
+      <div class="resume-frame-wrap">
+        <div class="resume-canvas-wrap" id="resume-canvas-wrap"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <p class="eyebrow" contenteditable="" spellcheck="false">05 — Contact</p>
+  <h2 contenteditable="" spellcheck="false">Get In Touch</h2>
+  <div class="contact-wrap">
+    <p class="contact-intro" contenteditable="">Open to research opportunities, internships, and connecting with fellow engineers. Feel free to reach out.</p>
+    <div class="contact-list" id="contact-list"></div>
+    <button class="add-contact-btn" onclick="addContact()">+ Add Contact Method</button>
+  </div>
+</section>
+
+<footer>
+  <p contenteditable="" spellcheck="false" style="color:rgba(255,255,255,.65)">Your Name · ECE 1100 ePortfolio · Georgia Tech · © 2025</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// Capture the raw HTML source text RIGHT NOW before anything mutates the DOM.
+// We read it from the script tags themselves — guaranteed to be the clean template.
+window.__ORIG_SRC__ = (function(){
+  var html = document.documentElement.outerHTML;
+  // Strip __bs__ div — use indexOf, not regex, since content can be 30MB+
+  var divOpen = '<div id="__bs__"';
+  var divClose = '</div>';
+  var s = html.indexOf(divOpen);
+  if(s !== -1){
+    var e = html.indexOf(divClose, s);
+    if(e !== -1) html = html.slice(0, s) + html.slice(e + divClose.length);
+  }
+  return html;
+})();
+// Suppress PDF.js sandbox warnings immediately before anything loads
+(()=>{const w=console.warn.bind(console);console.warn=(...a)=>{const s=String(a[0]||'');if(s.includes('fake worker')||s.includes('TT:')||s.includes('undefined function'))return;w(...a);};})();
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
+  e.preventDefault();
+  const target=document.querySelector(a.getAttribute('href'));
+  if(!target)return;
+  const id=target.id;
+  if(id==='home'){window.scrollTo({top:0,behavior:'smooth'});}
+  else{
+    const top=target.getBoundingClientRect().top+window.scrollY-83;
+    window.scrollTo({top,behavior:'smooth'});
+  }
+}));
+
+// ── Edit mode ──
+let editMode=false;
+function toggleEdit(){
+  editMode=!editMode;
+  document.body.classList.toggle('edit-mode',editMode);
+  const b=document.getElementById('drag-btn');
+  b.textContent=editMode?'Disable Drag':'Enable Drag to Reorder';
+  b.classList.toggle('active',editMode);
+  document.getElementById('drag-hint').style.display=editMode?'inline':'none';
+}
+
+// ── File readers ──
+const rdURL=f=>new Promise(r=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.readAsDataURL(f);});
+const rdTxt=f=>new Promise(r=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.readAsText(f);});
+const rdBuf=f=>new Promise(r=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.readAsArrayBuffer(f);});
+
+// ── HEADSHOT — proportional + draggable + resizable ──
+const hImg=document.getElementById('headshot-img');
+const hBox=document.getElementById('headshot-box');
+const hWrap=document.getElementById('hs-wrap');
+const hTop=document.getElementById('home-top');
+
+document.getElementById('headshot-input').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const url=await rdURL(f);
+  hImg.src=url;
+  hImg.onload=()=>{
+    hBox.classList.add('has-photo');hBox.classList.remove('empty');
+    const nat=hImg.naturalWidth/hImg.naturalHeight;
+    const w=Math.min(300,Math.round(220*nat));
+    hWrap.style.width=w+'px';
+    save();
+  };
+});
+
+// ── Headshot DRAG (via drag bar) ──
+const hsDragBar=document.getElementById('hs-drag-bar');
+let hsDragging=false,hsDX=0,hsDY=0,hsOrigL=0,hsOrigT=0;
+
+hsDragBar.addEventListener('mousedown',e=>{
+  if(!editMode)return;
+  e.preventDefault();hsDragging=true;
+  // Switch headshot wrap to absolute inside home-top
+  if(hWrap.style.position!=='absolute'){
+    const r=hWrap.getBoundingClientRect(),pr=hTop.getBoundingClientRect();
+    hTop.style.position='relative';
+    hWrap.style.position='absolute';
+    hWrap.style.left=(r.left-pr.left)+'px';
+    hWrap.style.top=(r.top-pr.top)+'px';
+    hWrap.style.flexShrink='0';
+  }
+  hsOrigL=parseInt(hWrap.style.left)||0;
+  hsOrigT=parseInt(hWrap.style.top)||0;
+  hsDX=e.clientX;hsDY=e.clientY;
+});
+window.addEventListener('mousemove',e=>{
+  if(!hsDragging)return;
+  const snap=16;
+  let x=hsOrigL+(e.clientX-hsDX);
+  let y=hsOrigT+(e.clientY-hsDY);
+  x=Math.round(x/snap)*snap;y=Math.round(y/snap)*snap;
+  hWrap.style.left=x+'px';hWrap.style.top=y+'px';
+});
+window.addEventListener('mouseup',()=>{if(hsDragging){hsDragging=false;save();}});
+
+// ── Headshot RESIZE (corner handle) ──
+const hsResizer=document.getElementById('hs-resizer');
+let hsResizing=false,hsRStartX=0,hsRStartW=0;
+hsResizer.addEventListener('mousedown',e=>{
+  e.preventDefault();e.stopPropagation();
+  hsResizing=true;hsRStartX=e.clientX;hsRStartW=hWrap.offsetWidth;
+});
+window.addEventListener('mousemove',e=>{
+  if(!hsResizing)return;
+  const snap=20;
+  let w=Math.max(80,Math.min(500,hsRStartW+(e.clientX-hsRStartX)));
+  w=Math.round(w/snap)*snap;
+  hWrap.style.width=w+'px';
+});
+window.addEventListener('mouseup',()=>{if(hsResizing){hsResizing=false;save();}});
+
+// ── Home text drag with snapping ──
+const textDragBar=document.getElementById('text-drag-bar');
+const homeText=document.getElementById('home-text');
+const homeTop=document.getElementById('home-top');
+let textDragging=false,txStart=0,tyStart=0,txOrig=0,tyOrig=0;
+
+textDragBar.addEventListener('mousedown',e=>{
+  if(!editMode)return;
+  e.preventDefault();textDragging=true;
+  // Switch to absolute positioning within home-top
+  const rect=homeText.getBoundingClientRect();
+  const parentRect=homeTop.getBoundingClientRect();
+  homeTop.style.position='relative';
+  homeText.style.position='absolute';
+  homeText.style.left=(rect.left-parentRect.left)+'px';
+  homeText.style.top=(rect.top-parentRect.top)+'px';
+  homeText.style.width=rect.width+'px';
+  txOrig=rect.left-parentRect.left;tyOrig=rect.top-parentRect.top;
+  txStart=e.clientX;tyStart=e.clientY;
+});
+window.addEventListener('mousemove',e=>{
+  if(!textDragging)return;
+  const snap=16;
+  let x=txOrig+(e.clientX-txStart);
+  let y=tyOrig+(e.clientY-tyStart);
+  x=Math.round(x/snap)*snap;
+  y=Math.round(y/snap)*snap;
+  homeText.style.left=x+'px';
+  homeText.style.top=y+'px';
+});
+window.addEventListener('mouseup',()=>{if(textDragging){textDragging=false;save();}});
+
+// ── MTL parser ──
+function parseMTL(txt){
+  const m={};let c=null;
+  for(const l of txt.split('\n')){
+    const t=l.trim();
+    if(t.startsWith('newmtl ')){c=t.slice(7).trim();m[c]={r:.7,g:.7,b:.7};}
+    else if(t.startsWith('Kd ')&&c){const p=t.split(/\s+/);m[c]={r:+p[1],g:+p[2],b:+p[3]};}
+  }
+  return m;
+}
+
+// ── OBJ parser ──
+function parseOBJ(txt,mats){
+  const VP=[],VN=[];const verts=[],norms=[],cols=[];
+  let cr={r:.7,g:.7,b:.7};
+  for(const line of txt.split('\n')){
+    const t=line.trim();
+    if(t.startsWith('v ')){const p=t.split(/\s+/);VP.push([+p[1],+p[2],+p[3]]);}
+    else if(t.startsWith('vn ')){const p=t.split(/\s+/);VN.push([+p[1],+p[2],+p[3]]);}
+    else if(t.startsWith('usemtl ')&&mats){const m=mats[t.slice(7).trim()];if(m)cr={...m};}
+    else if(t.startsWith('f ')){
+      const pts=t.slice(2).trim().split(/\s+/).map(s=>{const x=s.split('/');return{vi:+x[0]-1,ni:x[2]?+x[2]-1:-1};});
+      for(let i=1;i<pts.length-1;i++){
+        for(const q of[pts[0],pts[i],pts[i+1]]){
+          const v=VP[q.vi]||[0,0,0];verts.push(...v);
+          const n=q.ni>=0&&VN[q.ni]?VN[q.ni]:[0,1,0];norms.push(...n);
+          cols.push(cr.r,cr.g,cr.b);
+        }
+      }
+    }
+  }
+  return{verts,norms,cols};
+}
+
+// ── STL parser ──
+function parseSTL(buf){
+  const dv=new DataView(buf);const n=dv.getUint32(80,true);
+  const verts=[],norms=[],cols=[];
+  if(buf.byteLength===84+n*50&&n>0){
+    let o=84;
+    for(let i=0;i<n;i++){
+      const nx=dv.getFloat32(o,true),ny=dv.getFloat32(o+4,true),nz=dv.getFloat32(o+8,true);o+=12;
+      for(let v=0;v<3;v++){verts.push(dv.getFloat32(o,true),dv.getFloat32(o+4,true),dv.getFloat32(o+8,true));norms.push(nx,ny,nz);cols.push(.6,.6,.6);o+=12;}
+      o+=2;
+    }
+  } else {
+    let nx=0,ny=0,nz=0;
+    for(const l of new TextDecoder().decode(buf).split('\n')){
+      const t=l.trim();
+      if(t.startsWith('facet normal')){const p=t.split(/\s+/);nx=+p[2];ny=+p[3];nz=+p[4];}
+      else if(t.startsWith('vertex')){const p=t.split(/\s+/);verts.push(+p[1],+p[2],+p[3]);norms.push(nx,ny,nz);cols.push(.6,.6,.6);}
+    }
+  }
+  return{verts,norms,cols};
+}
+
+// ── Three.js viewer ──
+function initViewer(canvas,gd){
+  const W=()=>canvas.clientWidth,H=()=>Math.max(canvas.clientHeight,1);
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setClearColor(0xd0d0d0);
+
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,W()/H(),.001,1e8);
+
+  // Lighting tuned to match Onshape CAD render
+  scene.add(new THREE.AmbientLight(0xffffff,0.30));
+  const key=new THREE.DirectionalLight(0xffffff,0.95);key.position.set(4,5,1);scene.add(key);
+  const fill=new THREE.DirectionalLight(0xffffff,0.12);fill.position.set(-3,1,2);scene.add(fill);
+
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(gd.verts),3));
+  geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(gd.cols),3));
+  geo.computeVertexNormals();
+  const mat=new THREE.MeshPhongMaterial({vertexColors:true,shininess:45,specular:0x222222,side:THREE.DoubleSide});
+  const mesh=new THREE.Mesh(geo,mat);
+  scene.add(mesh);
+
+  geo.computeBoundingBox();
+  const box=geo.boundingBox;
+  const ctr=new THREE.Vector3();box.getCenter(ctr);mesh.position.sub(ctr);
+  const sz=new THREE.Vector3();box.getSize(sz);
+  const maxD=Math.max(sz.x,sz.y,sz.z)||1;
+
+  // ── Default camera: matches Onshape screenshot exactly ──
+  // Looking from front-right, ~30° down from horizontal
+  // phi = angle from top pole: 90°-30° = 60° → π*60/180 = π/3
+  // theta = azimuth from +Z toward +X: ~35° right → π*35/180 ≈ 0.611
+  let phi  = Math.PI / 3;   // 60° from top = 30° above horizontal
+  let theta = 0.611;         // 35° azimuth — right-front corner
+  let radius = maxD * 2.4;
+
+  camera.near=maxD*.001;camera.far=maxD*300;
+
+  function updateCam(){
+    camera.position.set(
+      radius*Math.sin(phi)*Math.cos(theta),
+      radius*Math.cos(phi),
+      radius*Math.sin(phi)*Math.sin(theta)
+    );
+    camera.lookAt(0,0,0);
+    camera.aspect=W()/H();
+    camera.updateProjectionMatrix();
+  }
+  updateCam();
+
+  // Pointer controls
+  let active=false,lx=0,ly=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);active=true;lx=e.clientX;ly=e.clientY;e.stopPropagation();});
+  canvas.addEventListener('pointermove',e=>{
+    if(!active)return;
+    theta-=(e.clientX-lx)*.009;
+    phi=Math.max(.05,Math.min(Math.PI-.05,phi+(e.clientY-ly)*.009));
+    lx=e.clientX;ly=e.clientY;updateCam();e.stopPropagation();
+  });
+  canvas.addEventListener('pointerup',e=>{active=false;e.stopPropagation();});
+  canvas.addEventListener('pointercancel',()=>active=false);
+  canvas.addEventListener('wheel',e=>{
+    e.preventDefault();e.stopPropagation();
+    radius=Math.max(maxD*.2,Math.min(maxD*15,radius+e.deltaY*maxD*.0015));
+    updateCam();
+  },{passive:false});
+
+  function loop(){
+    requestAnimationFrame(loop);
+    const w=W(),h=H();
+    if(renderer.domElement.width!==w||renderer.domElement.height!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+    renderer.render(scene,camera);
+  }
+  loop();
+}
+
+// ── Projects ──
+let pCount=0,dragSrc=null;const mtlStore={};
+// per-project media arrays: projMedia[id] = [{type:'img'|'video', src}, ...]
+const projMedia={};
+
+function addProj(data){
+  pCount++;const id='p'+pCount;
+  projMedia[id]=[];
+  const card=document.createElement('div');card.className='proj-card';card.id=id;
+  card.innerHTML=`
+    <div class="drag-handle" title="Drag to reorder">⠿</div>
+    <div class="proj-media" id="pm-${id}">
+      <div class="proj-viewer" id="pv-${id}">
+        <canvas id="cv-${id}" style="display:none"></canvas>
+        <img class="proj-active-img" id="ai-${id}" src="" alt=""/>
+        <video class="proj-active-video" id="av-${id}" controls playsinline></video>
+        <div class="viewer-hint" id="vh-${id}" style="display:none">Drag · Scroll to zoom</div>
+        <div class="media-empty" id="me-${id}">
+          <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.4" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="m3 15 5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+          <span>No media attached</span>
+        </div>
+      </div>
+      <div class="proj-thumbs" id="pt-${id}"></div>
+      <div class="media-controls">
+        <button onclick="trigImgs('${id}')">+ Images</button>
+        <button onclick="trigVid('${id}')">+ Video</button>
+        <button onclick="trig3D('${id}')">Upload OBJ / STL</button>
+        <a class="media-file-link" id="fl-${id}" href="#" target="_blank" download>Download file</a>
+      </div>
+      <input type="file" id="ii-${id}" style="display:none" accept="image/*" multiple onchange="onImgs('${id}',this)"/>
+      <input type="file" id="iv-${id}" style="display:none" accept="video/*" onchange="onVid('${id}',this)"/>
+      <input type="file" id="i3-${id}" style="display:none" accept=".obj,.stl,.pdf" onchange="on3D('${id}',this)"/>
+      <input type="file" id="im-mtl-${id}" style="display:none" accept=".mtl"/>
+    </div>
+    <div class="proj-body">
+      <h3 contenteditable spellcheck="false">${data?.title??'Project Title'}</h3>
+      <p contenteditable>${data?.desc??'Describe your project — the problem you tackled, your approach, tools used, and results.'}</p>
+      <div class="proj-footer">
+        <span>Project ${pCount}</span>
+        <button class="del-btn" type="button" onclick="delProj('${id}')">✕ Remove Project</button>
+      </div>
+    </div>`;
+
+  document.getElementById('proj-list').appendChild(card);
+
+  // Restore saved media items
+  if(data?.mediaItems?.length){
+    data.mediaItems.forEach((m,i)=>{
+      if(m.type==='img') addProjThumb(id,m.src,'img');
+      else if(m.type==='video'&&m.src){
+        // Convert base64 back to object URL for playback
+        try{
+          const byteStr=atob(m.src.split(',')[1]);
+          const mime=m.src.split(';')[0].split(':')[1]||'video/mp4';
+          const ab=new ArrayBuffer(byteStr.length);
+          const ia=new Uint8Array(ab);
+          for(let j=0;j<byteStr.length;j++)ia[j]=byteStr.charCodeAt(j);
+          const objURL=URL.createObjectURL(new Blob([ab],{type:mime}));
+          addProjThumb(id,objURL,'video');
+          // Store b64 back for future exports
+          const idx=projMedia[id].length-1;
+          if(projMedia[id][idx])projMedia[id][idx].b64=m.src;
+        }catch(e){addProjThumb(id,m.src,'video');}
+      }
+      else if(m.type==='3d'){
+        _addThumb3D(id,m.geo||'');
+        projMedia[id][projMedia[id].length-1].geo=m.geo||'';
+      }
+    });
+    // Show first slide; if first is 3D, init it
+    const first=data.mediaItems[0];
+    if(first?.type==='3d'&&first.geo){
+      setTimeout(()=>{
+        const cv=document.getElementById('cv-'+id);
+        cv.style.display='block';
+        document.getElementById('me-'+id).style.display='none';
+        document.getElementById('vh-'+id).style.display='block';
+        try{initViewer(cv,JSON.parse(first.geo));cv.dataset.viewerReady='1';}catch(e){}
+        showProjMedia(id,0);
+      },80);
+    } else {
+      showProjMedia(id,0);
+    }
+  } else if(data?.geo){
+    // legacy: restore old single-STL format as a slide
+    setTimeout(()=>{
+      try{
+        const gd=JSON.parse(data.geo);
+        _addThumb3D(id,data.geo);
+        projMedia[id][projMedia[id].length-1].geo=data.geo;
+        const cv=document.getElementById('cv-'+id);
+        cv.style.display='block';
+        document.getElementById('me-'+id).style.display='none';
+        document.getElementById('vh-'+id).style.display='block';
+        initViewer(cv,gd);cv.dataset.viewerReady='1';
+        showProjMedia(id,0);
+      }catch(e){}
+    },80);
+  }
+  if(data?.flHref&&data?.flName){
+    const lnk=document.getElementById('fl-'+id);
+    lnk.href=data.flHref;lnk.textContent='↓ '+data.flName;lnk.classList.add('on');
+  }
+
+  // Drag reorder
+  const dh=card.querySelector('.drag-handle');
+  dh.addEventListener('mousedown',()=>card.draggable=true);
+  document.addEventListener('mouseup',()=>card.draggable=false,true);
+  card.addEventListener('dragstart',e=>{dragSrc=card;card.style.opacity='.4';e.dataTransfer.effectAllowed='move';});
+  card.addEventListener('dragend',()=>{card.style.opacity='';card.draggable=false;save();});
+  card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
+  card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+  card.addEventListener('drop',e=>{
+    e.preventDefault();card.classList.remove('drag-over');
+    if(dragSrc&&dragSrc!==card){
+      const list=document.getElementById('proj-list');const arr=[...list.children];
+      arr.indexOf(dragSrc)<arr.indexOf(card)?card.after(dragSrc):card.before(dragSrc);save();
+    }
+  });
+  bindEdit(card);save();
+}
+
+function addProjThumb(id,src,type){
+  if(!projMedia[id])projMedia[id]=[];
+  const idx=projMedia[id].length;
+  projMedia[id].push({type,src});
+
+  const strip=document.getElementById('pt-'+id);
+  const wrap=document.createElement('div');
+  wrap.className='proj-thumb-wrap';wrap.dataset.idx=idx;
+
+  if(type==='img'){
+    const t=document.createElement('img');
+    t.className='proj-thumb';t.src=src;
+    t.onclick=()=>showProjMedia(id,idx);
+    wrap.appendChild(t);
+  } else if(type==='video'){
+    const t=document.createElement('div');
+    t.className='proj-thumb video-thumb';
+    t.innerHTML='▶';t.title='Video';
+    t.onclick=()=>showProjMedia(id,idx);
+    wrap.appendChild(t);
+  } else if(type==='3d'){
+    const t=document.createElement('div');
+    t.className='proj-thumb video-thumb';
+    t.innerHTML='⬡';t.title='3D Model';t.style.fontSize='20px';
+    t.onclick=()=>showProjMedia(id,idx);
+    wrap.appendChild(t);
+  }
+
+  const del=document.createElement('button');
+  del.className='thumb-del';del.type='button';del.textContent='×';
+  del.onclick=(e)=>{e.stopPropagation();removeProjMedia(id,idx);};
+  wrap.appendChild(del);
+  strip.appendChild(wrap);
+  document.getElementById('me-'+id).style.display='none';
+}
+
+function showProjMedia(id,idx){
+  const items=projMedia[id];
+  if(!items||!items.length)return;
+  const m=items[idx];if(!m)return;
+
+  const ai=document.getElementById('ai-'+id);
+  const av=document.getElementById('av-'+id);
+  const cv=document.getElementById('cv-'+id);
+  const vh=document.getElementById('vh-'+id);
+
+  ai.style.display='none';
+  av.style.display='none';
+  cv.style.display='none';
+  vh.style.display='none';
+
+  if(m.type==='img'){
+    ai.src=m.src;ai.style.display='block';
+  } else if(m.type==='video'){
+    av.src=m.src;av.style.display='block';
+  } else if(m.type==='3d'){
+    cv.style.display='block';
+    vh.style.display='block';
+    // Only init viewer once — canvas already has renderer if data-geo-loaded
+    if(!cv.dataset.viewerReady&&m.geo){
+      try{
+        initViewer(cv,JSON.parse(m.geo));
+        cv.dataset.viewerReady='1';
+        document.getElementById('pm-'+id).dataset.geo=m.geo;
+      }catch(e){}
+    }
+  }
+
+  // Update active thumbnail
+  const strip=document.getElementById('pt-'+id);
+  [...strip.querySelectorAll('.proj-thumb,.video-thumb')].forEach((t,i)=>{
+    t.classList.toggle('active',i===idx);
+  });
+}
+
+function removeProjMedia(id,idx){
+  projMedia[id].splice(idx,1);
+  const strip=document.getElementById('pt-'+id);
+  strip.innerHTML='';
+  const saved=projMedia[id].slice();
+  projMedia[id]=[];
+  saved.forEach(m=>{
+    if(m.type==='3d') _addThumb3D(id,m.geo);
+    else addProjThumb(id,m.src,m.type);
+  });
+  if(projMedia[id].length) showProjMedia(id,0);
+  else{
+    document.getElementById('ai-'+id).style.display='none';
+    document.getElementById('av-'+id).style.display='none';
+    document.getElementById('cv-'+id).style.display='none';
+    document.getElementById('me-'+id).style.display='flex';
+  }
+  save();
+}
+
+// Add a 3D thumb (stores geo string, not a URL src)
+function _addThumb3D(id,geoStr){
+  if(!projMedia[id])projMedia[id]=[];
+  const idx=projMedia[id].length;
+  projMedia[id].push({type:'3d',src:'',geo:geoStr});
+
+  const strip=document.getElementById('pt-'+id);
+  const wrap=document.createElement('div');
+  wrap.className='proj-thumb-wrap';wrap.dataset.idx=idx;
+  const t=document.createElement('div');
+  t.className='proj-thumb video-thumb';
+  t.innerHTML='⬡';t.title='3D Model';t.style.fontSize='20px';
+  t.onclick=()=>showProjMedia(id,idx);
+  wrap.appendChild(t);
+  const del=document.createElement('button');
+  del.className='thumb-del';del.type='button';del.textContent='×';
+  del.onclick=(e)=>{e.stopPropagation();removeProjMedia(id,idx);};
+  wrap.appendChild(del);
+  strip.appendChild(wrap);
+  document.getElementById('me-'+id).style.display='none';
+}
+
+function delProj(id){const c=document.getElementById(id);if(c){c.remove();delete projMedia[id];save();}}
+function trigImgs(id){document.getElementById('ii-'+id).click();}
+function trigVid(id){document.getElementById('iv-'+id).click();}
+function trig3D(id){document.getElementById('i3-'+id).click();}
+
+async function onImgs(id,inp){
+  for(const f of inp.files){
+    const url=await rdURL(f);
+    addProjThumb(id,url,'img');
+  }
+  showProjMedia(id,projMedia[id].length-inp.files.length);
+  inp.value='';save();
+}
+
+// Per-project video file references (for export — object URLs don't survive reload)
+const projVideoFiles={};
+
+async function onVid(id,inp){
+  const f=inp.files[0];if(!f)return;
+  // Use object URL for instant playback (no base64 conversion needed)
+  const objURL=URL.createObjectURL(f);
+  // Also read as base64 for export persistence
+  const b64=await rdURL(f);
+  const idx=projMedia[id]?.length||0;
+  addProjThumb(id,objURL,'video');
+  // Store base64 on the media entry for export
+  if(projMedia[id]&&projMedia[id][idx])projMedia[id][idx].b64=b64;
+  showProjMedia(id,projMedia[id].length-1);
+  inp.value='';save();
+}
+
+let pendingOBJ={};
+async function on3D(id,inp){
+  const f=inp.files[0];if(!f)return;
+  const nm=f.name.toLowerCase();
+  if(nm.endsWith('.obj')){
+    pendingOBJ[id]=f;
+    const pm=document.getElementById('pm-'+id);
+    const pr=document.createElement('div');pr.className='mtl-prompt';pr.id='mpr-'+id;
+    pr.innerHTML=`<p><strong>OBJ loaded.</strong><br/>Do you have the .mtl color file?</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button style="padding:5px 14px;border:1px solid #aaa;background:#fff;cursor:pointer;font-family:Arial;font-size:11px;letter-spacing:.06em" onclick="pickMTL('${id}')">Yes — select .mtl</button>
+        <button style="padding:5px 14px;border:1px solid #aaa;background:#fff;cursor:pointer;font-family:Arial;font-size:11px;letter-spacing:.06em" onclick="loadOBJnow('${id}',null)">No — load anyway</button>
+      </div>`;
+    pm.appendChild(pr);
+  } else if(nm.endsWith('.stl')){
+    await loadSTL(id,f);
+  } else {
+    const url=await rdURL(f);const lnk=document.getElementById('fl-'+id);
+    lnk.href=url;lnk.textContent='↓ '+f.name;lnk.classList.add('on');save();
+  }
+}
+
+function pickMTL(id){
+  document.getElementById('mpr-'+id)?.remove();
+  const inp=document.getElementById('im-mtl-'+id);
+  inp.onchange=async()=>{const f=inp.files[0];if(f)mtlStore[id]=parseMTL(await rdTxt(f));await loadOBJnow(id,mtlStore[id]||null);};
+  inp.click();
+}
+
+async function loadOBJnow(id,mats){
+  document.getElementById('mpr-'+id)?.remove();
+  const f=pendingOBJ[id];if(!f)return;
+  const pm=document.getElementById('pm-'+id);
+  const lo=document.createElement('div');lo.className='loading-over';lo.textContent='Parsing OBJ…';pm.appendChild(lo);
+  await new Promise(r=>setTimeout(r,20));
+  const gd=parseOBJ(await rdTxt(f),mats);lo.remove();
+  const geoStr=JSON.stringify({verts:Array.from(gd.verts),norms:Array.from(gd.norms),cols:Array.from(gd.cols)});
+  pm.dataset.geo=geoStr;
+  _add3DSlide(id,gd,geoStr);
+  save();
+}
+
+async function loadSTL(id,f){
+  const buf=await rdBuf(f);const gd=parseSTL(buf);
+  const geoStr=JSON.stringify({verts:Array.from(gd.verts),norms:Array.from(gd.norms),cols:Array.from(gd.cols)});
+  document.getElementById('pm-'+id).dataset.geo=geoStr;
+  _add3DSlide(id,gd,geoStr);
+  save();
+}
+
+function _add3DSlide(id,gd,geoStr){
+  // Add 3D as a slide in the media strip
+  _addThumb3D(id,geoStr);
+  const newIdx=projMedia[id].length-1;
+  // Pre-init the viewer now and mark ready
+  const cv=document.getElementById('cv-'+id);
+  cv.style.display='block';
+  document.getElementById('me-'+id).style.display='none';
+  document.getElementById('vh-'+id).style.display='block';
+  initViewer(cv,gd);
+  cv.dataset.viewerReady='1';
+  // Store geo on the projMedia entry too
+  projMedia[id][newIdx].geo=geoStr;
+  showProjMedia(id,newIdx);
+}
+
+function _show3D(id,gd){
+  // legacy — just use _add3DSlide
+  const geoStr=JSON.stringify({verts:Array.from(gd.verts),norms:Array.from(gd.norms),cols:Array.from(gd.cols)});
+  _add3DSlide(id,gd,geoStr);
+}
+
+// ── Save / Load ──
+const STORE='ece-v9';
+const IMG_CHUNK=500000;
+
+function saveImg(key,dataUrl){
+  if(!dataUrl){localStorage.removeItem(key+'_n');return;}
+  try{
+    const chunks=Math.ceil(dataUrl.length/IMG_CHUNK);
+    localStorage.setItem(key+'_n',String(chunks));
+    for(let i=0;i<chunks;i++)
+      localStorage.setItem(key+'_'+i, dataUrl.slice(i*IMG_CHUNK,(i+1)*IMG_CHUNK));
+  }catch(e){console.warn('saveImg failed',key,e);}
+}
+
+function loadImg(key){
+  try{
+    const n=parseInt(localStorage.getItem(key+'_n')||'0');
+    if(!n)return '';
+    let out='';
+    for(let i=0;i<n;i++) out+=localStorage.getItem(key+'_'+i)||'';
+    return out;
+  }catch(e){return '';}
+}
+
+function save(){
+  const s={};
+
+  // Text
+  s.txt={};
+  document.querySelectorAll('[contenteditable]').forEach((e,i)=>{s.txt[i]=e.innerHTML;});
+
+  // Headshot position/size (image saved separately below)
+  s.hsW=hWrap.style.width||'';
+  s.hsPos={pos:hWrap.style.position||'',left:hWrap.style.left||'',top:hWrap.style.top||''};
+  s.textPos={left:homeText.style.left,top:homeText.style.top,pos:homeText.style.position,w:homeText.style.width};
+
+  // Goals
+  s.goals=[];
+  document.querySelectorAll('.goal').forEach(g=>{
+    s.goals.push({num:g.querySelector('.goal-num')?.innerHTML??'',title:g.querySelector('h3')?.innerHTML??'',desc:g.querySelector('p')?.innerHTML??''});
+  });
+
+  // Projects metadata (images saved separately below)
+  s.projs=[];
+  document.querySelectorAll('.proj-card').forEach((card,ci)=>{
+    const id=card.id;
+    const lnk=document.getElementById('fl-'+id);
+    const pm=document.getElementById('pm-'+id);
+    const items=projMedia[id]||[];
+    const mediaMeta=items.map((m,mi)=>{
+      if(m.type==='img')    return {type:'img'};
+      if(m.type==='video')  return {type:'video'};
+      if(m.type==='3d')     return {type:'3d',geo:m.geo||''};
+      return {type:m.type};
+    });
+    s.projs.push({
+      title:card.querySelector('h3')?.innerHTML??'',
+      desc:card.querySelector('p')?.innerHTML??'',
+      mediaMeta, mediaCount:items.length,
+      geo:pm?.dataset.geo??'',
+      flHref:lnk?.classList.contains('on')?lnk.href:'',
+      flName:lnk?.classList.contains('on')?lnk.textContent.replace('↓ ',''):'',
+    });
+  });
+
+  // Contacts
+  s.contacts=[];
+  document.querySelectorAll('.c-item').forEach(item=>{
+    s.contacts.push({label:item.querySelector('.c-item-label')?.innerHTML??'',val:item.querySelector('.c-item-val')?.innerHTML??''});
+  });
+
+  // Resume
+  const rv=document.getElementById('resume-viewer');
+  s.resumeName=rv.style.display!=='none'?(rv.dataset.name||''):'';
+
+  // Gallery positions + count
+  s.galItems=[];
+  document.querySelectorAll('.gallery-item').forEach(item=>{
+    s.galItems.push({x:parseInt(item.style.left)||0,y:parseInt(item.style.top)||0,w:item.offsetWidth||180,h:item.offsetHeight||180});
+  });
+
+  // Save structure
+  try{localStorage.setItem(STORE,JSON.stringify(s));}catch(e){console.warn('save failed',e);}
+
+  // Save images chunked (after structure so counts are right)
+  saveImg(STORE+'_hs', hImg.src.startsWith('data:')?hImg.src:'');
+  if(s.resumeName) saveImg(STORE+'_resume', rv.dataset.url||'');
+  document.querySelectorAll('.gallery-item').forEach((item,i)=>{
+    saveImg(STORE+'_gal_'+i, item.querySelector('img')?.src||'');
+  });
+  document.querySelectorAll('.proj-card').forEach((card,ci)=>{
+    const id=card.id;
+    (projMedia[id]||[]).forEach((m,mi)=>{
+      if(m.type==='img')   saveImg(STORE+'_pm_'+ci+'_'+mi, m.src||'');
+      if(m.type==='video') saveImg(STORE+'_pm_'+ci+'_'+mi, m.b64||'');
+    });
+  });
+
+  // Flash indicator
+  const ind=document.getElementById('save-ind');
+  if(ind){ind.style.opacity='1';clearTimeout(ind._t);ind._t=setTimeout(()=>ind.style.opacity='0',1200);}
+}
+
+function load(){
+  let s;try{s=JSON.parse(localStorage.getItem(STORE));}catch(e){}
+  if(!s)return false;
+
+  // Headshot
+  const hsSrc=loadImg(STORE+'_hs');
+  if(hsSrc){hImg.src=hsSrc;hBox.classList.add('has-photo');hBox.classList.remove('empty');}
+  if(s.hsW)hWrap.style.width=s.hsW;
+  if(s.hsPos?.pos){hWrap.style.position=s.hsPos.pos;hWrap.style.left=s.hsPos.left;hWrap.style.top=s.hsPos.top;hTop.style.position='relative';}
+  if(s.textPos?.pos){homeText.style.position=s.textPos.pos;homeText.style.left=s.textPos.left;homeText.style.top=s.textPos.top;if(s.textPos.w)homeText.style.width=s.textPos.w;}
+
+  // Resume
+  if(s.resumeName){const url=loadImg(STORE+'_resume');if(url)showResume(url,s.resumeName);}
+
+  // Gallery
+  (s.galItems||[]).forEach((pos,i)=>{
+    const src=loadImg(STORE+'_gal_'+i);
+    if(src)addGalleryPhoto(src,pos.x,pos.y,pos.w,pos.h);
+  });
+  updateCanvasHeight();
+
+  // Goals
+  if(s.goals?.length)s.goals.forEach(g=>addGoal(g));
+  else{
+    addGoal({num:'01',title:'Short-Term · 1–2 Years',desc:'Complete core ECE coursework, secure a research assistant position, and build proficiency in embedded C and FPGA design.'});
+    addGoal({num:'02',title:'Mid-Term · 3–4 Years',desc:'Complete a co-op at a hardware or defense tech company, lead a capstone project, and graduate with honors from Georgia Tech.'});
+    addGoal({num:'03',title:'Long-Term · 5–10 Years',desc:'Work as a systems engineer on autonomous vehicles or spacecraft, and potentially pursue an MS in ECE.'});
+  }
+
+  // Projects
+  (s.projs||[]).forEach((p,ci)=>{
+    const mediaItems=(p.mediaMeta||[]).map((m,mi)=>{
+      if(m.type==='img')  {const src=loadImg(STORE+'_pm_'+ci+'_'+mi);return src?{type:'img',src}:null;}
+      if(m.type==='video'){const src=loadImg(STORE+'_pm_'+ci+'_'+mi);return src?{type:'video',src,b64:src}:null;}
+      if(m.type==='3d')   return {type:'3d',src:'',geo:m.geo||''};
+      return null;
+    }).filter(Boolean);
+    addProj({...p,mediaItems});
+  });
+
+  // Contacts
+  if(s.contacts?.length)s.contacts.forEach(c=>addContact(c));
+  else{addContact({label:'Email',val:'yourname@gatech.edu'});addContact({label:'LinkedIn',val:'linkedin.com/in/yourname'});addContact({label:'GitHub',val:'github.com/yourname'});}
+
+  // Text last
+  if(s.txt)document.querySelectorAll('[contenteditable]').forEach((e,i)=>{if(s.txt[i]!=null)e.innerHTML=s.txt[i];});
+  return true;
+}
+
+function bindEdit(root){
+  (root||document).querySelectorAll('[contenteditable]').forEach(el=>{
+    el.addEventListener('input',save);
+    el.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+  });
+}
+
+// ── Export ──
+function exportPage(){
+  const btn=event?.target;
+  if(btn){btn.textContent='Saving…';btn.disabled=true;}
+  try{
+
+  // First do a full save to localStorage
+  save();
+
+  // Now collect everything from the DOM for the file export
+  const editables={};
+  document.querySelectorAll('[contenteditable]').forEach((e,i)=>editables[i]=e.innerHTML);
+
+  const hs={
+    src:hImg.src.startsWith('data:')?hImg.src:'',
+    w:hWrap.style.width||'',
+    pos:hWrap.style.position||'',
+    left:hWrap.style.left||'',
+    top:hWrap.style.top||''
+  };
+  const textPos={pos:homeText.style.position||'',left:homeText.style.left||'',top:homeText.style.top||'',w:homeText.style.width||''};
+
+  const goals=[];
+  document.querySelectorAll('.goal').forEach(g=>goals.push({
+    num:g.querySelector('.goal-num')?.innerHTML??'',
+    title:g.querySelector('h3')?.innerHTML??'',
+    desc:g.querySelector('p')?.innerHTML??''
+  }));
+
+  const projs=[];
+  document.querySelectorAll('.proj-card').forEach(card=>{
+    const id=card.id;const lnk=document.getElementById('fl-'+id);const pm=document.getElementById('pm-'+id);
+    projs.push({title:card.querySelector('h3')?.innerHTML??'',desc:card.querySelector('p')?.innerHTML??'',
+      mediaItems:(projMedia[id]||[]).map(m=>m.type==='3d'?{type:'3d',src:'',geo:m.geo||''}:m.type==='video'?{type:'video',src:m.b64||''}:{type:m.type,src:m.src}),
+      geo:pm?.dataset.geo??'',flHref:lnk?.classList.contains('on')?lnk.href:'',
+      flName:lnk?.classList.contains('on')?lnk.textContent.replace('↓ ',''):'',});
+  });
+
+  const gallery=[];
+  document.querySelectorAll('.gallery-item').forEach(item=>gallery.push({
+    src:item.querySelector('img')?.src||'',
+    x:parseInt(item.style.left)||0,y:parseInt(item.style.top)||0,
+    w:item.offsetWidth||180,h:item.offsetHeight||180
+  }));
+
+  const contacts=[];
+  document.querySelectorAll('.c-item').forEach(item=>contacts.push({
+    label:item.querySelector('.c-item-label')?.innerHTML??'',
+    val:item.querySelector('.c-item-val')?.innerHTML??''
+  }));
+
+  const rv=document.getElementById('resume-viewer');
+  const resume=rv.style.display!=='none'?{url:rv.dataset.url||'',name:rv.dataset.name||''}:null;
+
+  const bs={editables,hs,textPos,goals,projs,gallery,contacts,resume};
+
+  // Encode as hex — only uses 0-9 a-f, cannot be broken by HTML parser
+  const jsonStr=JSON.stringify(bs);
+  let hexOut='';
+  for(let i=0;i<jsonStr.length;i++){hexOut+=jsonStr.charCodeAt(i).toString(16).padStart(4,'0');}
+  const bsDiv='';
+
+  let src=window.__ORIG_SRC__;
+  if(!src)throw new Error('Reload the page and try again.');
+
+  // Remove old __bs__ using indexOf (regex fails on 30MB+ content)
+  const oldDiv=src.indexOf('<div id="__bs__"');
+  if(oldDiv!==-1){
+    const oldDivEnd=src.indexOf('</div>',oldDiv);
+    if(oldDivEnd!==-1) src=src.slice(0,oldDiv)+src.slice(oldDivEnd+6);
+  }
+
+  const bodyClose=src.lastIndexOf('</body>');
+  const out=bodyClose!==-1?src.slice(0,bodyClose)+'\n'+bsDiv+'\n'+src.slice(bodyClose):src+'\n'+bsDiv;
+
+  const blob=new Blob([out],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='portfolio.html';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+
+  }catch(err){alert('Export error: '+err.message);}
+  if(btn){btn.textContent='⬇ Export & Save';btn.disabled=false;}
+}
+
+
+function applyBootstrap(){
+  const tag=document.getElementById('__bs__');
+  if(!tag)return false;
+  let bs;
+  try{
+    const hexIn=tag.dataset.v;let jsonStr='';for(let i=0;i<hexIn.length;i+=4){jsonStr+=String.fromCharCode(parseInt(hexIn.slice(i,i+4),16));}const json=jsonStr;
+    bs=JSON.parse(json);
+  }catch(e){console.error('Bootstrap parse error',e);return false;}
+  if(!bs)return false;
+
+  // Headshot
+  if(bs.hs?.src){
+    hImg.src=bs.hs.src;
+    hBox.classList.add('has-photo');hBox.classList.remove('empty');
+  }
+  if(bs.hs?.w)hWrap.style.width=bs.hs.w;
+  if(bs.hs?.pos==='absolute'){
+    hWrap.style.position='absolute';
+    hWrap.style.left=bs.hs.left||'';
+    hWrap.style.top=bs.hs.top||'';
+    hTop.style.position='relative';
+  }
+
+  // Home text position
+  if(bs.textPos?.pos==='absolute'){
+    homeText.style.position='absolute';
+    homeText.style.left=bs.textPos.left||'';
+    homeText.style.top=bs.textPos.top||'';
+    if(bs.textPos.w)homeText.style.width=bs.textPos.w;
+    hTop.style.position='relative';
+  }
+
+  // Resume
+  if(bs.resume?.url)showResume(bs.resume.url,bs.resume.name);
+
+  // About gallery
+  if(bs.gallery?.length){
+    bs.gallery.forEach(g=>addGalleryPhoto(g.src,g.x,g.y,g.w,g.h));
+    updateCanvasHeight();
+  }
+
+  // Goals
+  if(bs.goals?.length) bs.goals.forEach(g=>addGoal(g));
+  else{
+    addGoal({num:'01',title:'Short-Term · 1–2 Years',desc:'Complete core ECE coursework, secure a research assistant position, and build proficiency in embedded C and FPGA design.'});
+    addGoal({num:'02',title:'Mid-Term · 3–4 Years',desc:'Complete a co-op at a hardware or defense tech company, lead a capstone project, and graduate with honors from Georgia Tech.'});
+    addGoal({num:'03',title:'Long-Term · 5–10 Years',desc:'Work as a systems engineer on autonomous vehicles or spacecraft, and potentially pursue an MS in ECE.'});
+  }
+
+  // Projects
+  if(bs.projs?.length) bs.projs.forEach(p=>addProj(p));
+
+  // Contacts
+  if(bs.contacts?.length) bs.contacts.forEach(c=>addContact(c));
+
+  // Editable text — applied LAST so it overwrites placeholder text
+  if(bs.editables){
+    document.querySelectorAll('[contenteditable]').forEach((el,i)=>{
+      if(bs.editables[i]!=null) el.innerHTML=bs.editables[i];
+    });
+  }
+
+  // Remove the data tag from DOM
+  tag.remove();
+  return true;
+}
+
+// Suppress PDF.js worker warnings (expected in sandboxed environments)
+let pdfJsLoaded=false;
+function loadPDFjs(){
+  return new Promise(res=>{
+    if(pdfJsLoaded){res();return;}
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+    s.onload=()=>{
+      // Use the matching worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      pdfJsLoaded=true;res();
+    };
+    document.head.appendChild(s);
+  });
+}
+
+async function handleResume(inp){
+  const f=inp.files[0];if(!f)return;
+  const url=await rdURL(f);
+  await showResume(url,f.name);
+  save();
+}
+
+async function showResume(url,name){
+  document.getElementById('resume-upload-area').style.display='none';
+  const viewer=document.getElementById('resume-viewer');
+  viewer.style.display='block';
+  document.getElementById('resume-filename').textContent=name||'resume.pdf';
+  document.getElementById('resume-download-btn').href=url;
+  document.getElementById('resume-download-btn').download=name||'resume.pdf';
+  viewer.dataset.url=url;
+  viewer.dataset.name=name||'resume.pdf';
+
+  await loadPDFjs();
+  const wrap=document.getElementById('resume-canvas-wrap');
+  wrap.innerHTML='<div style="color:#ccc;font-size:13px;padding:2rem;text-align:center">Loading PDF…</div>';
+
+  try{
+    // Decode base64 PDF
+    const raw=atob(url.split(',')[1]);
+    const arr=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+
+    const pdf=await pdfjsLib.getDocument({data:arr}).promise;
+    wrap.innerHTML='';
+
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      // Use container width to determine scale so page fills full width
+      const containerW=wrap.parentElement.offsetWidth-40||800;
+      const baseVP=page.getViewport({scale:1});
+      const scale=containerW/baseVP.width;
+      const vp=page.getViewport({scale});
+
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width;
+      canvas.height=vp.height;
+      // CSS: let it be naturally sized (100% width via style)
+      canvas.style.display='block';
+      canvas.style.width='100%';
+      canvas.style.height='auto';
+      wrap.appendChild(canvas);
+
+      await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+    }
+  }catch(err){
+    console.error('PDF render error',err);
+    wrap.innerHTML='<div style="color:#faa;font-size:13px;padding:2rem;text-align:center">Could not render PDF preview. The Download button above still works.</div>';
+  }
+}
+
+// ── About Gallery (free-position canvas) ──
+let galCount=0;
+const SNAP=20; // snap grid px
+
+async function handleGalleryUpload(inp){
+  const canvas=document.getElementById('gallery-canvas');
+  let nextX=12, nextY=12;
+  // find a free spot — stack new photos to the right of existing ones
+  const existing=[...canvas.querySelectorAll('.gallery-item')];
+  if(existing.length){
+    let maxRight=0;
+    existing.forEach(el=>{
+      const r=parseInt(el.style.left||0)+parseInt(el.style.width||180);
+      if(r>maxRight)maxRight=r;
+    });
+    nextX=snapVal(maxRight+12);
+  }
+  for(const f of inp.files){
+    const url=await rdURL(f);
+    addGalleryPhoto(url,nextX,nextY,180,180);
+    nextX=snapVal(nextX+192);
+    // wrap to next row if too wide
+    if(nextX>canvas.offsetWidth-100){nextX=12;nextY=snapVal(nextY+192);}
+  }
+  inp.value='';
+  updateCanvasHeight();
+  save();
+}
+
+function snapVal(v){return Math.round(v/SNAP)*SNAP;}
+
+function addGalleryPhoto(src,x,y,w,h){
+  galCount++;
+  const id='gal'+galCount;
+  const canvas=document.getElementById('gallery-canvas');
+
+  const item=document.createElement('div');
+  item.className='gallery-item'; item.id=id;
+  item.style.left=(x||12)+'px';
+  item.style.top=(y||12)+'px';
+  item.style.width=(w||180)+'px';
+  item.style.height=(h||180)+'px';
+
+  item.innerHTML=`
+    <img src="${src}" alt=""/>
+    <div class="gal-drag-bar"></div>
+    <button class="gal-del" type="button" onclick="delGalleryPhoto('${id}')">×</button>
+    <div class="gal-resizer"></div>`;
+
+  canvas.appendChild(item);
+
+  // ── DRAG (move freely) ──
+  const bar=item.querySelector('.gal-drag-bar');
+  let dragActive=false,dox=0,doy=0;
+  bar.addEventListener('pointerdown',e=>{
+    if(!editMode)return;
+    e.preventDefault();
+    bar.setPointerCapture(e.pointerId);
+    dragActive=true;
+    dox=e.clientX-item.offsetLeft;
+    doy=e.clientY-item.offsetTop;
+    item.style.zIndex=100;
+  });
+  bar.addEventListener('pointermove',e=>{
+    if(!dragActive)return;
+    let nx=snapVal(e.clientX-dox);
+    let ny=snapVal(e.clientY-doy);
+    nx=Math.max(0,nx); ny=Math.max(0,ny);
+    item.style.left=nx+'px';
+    item.style.top=ny+'px';
+    updateCanvasHeight();
+  });
+  bar.addEventListener('pointerup',()=>{
+    if(!dragActive)return;
+    dragActive=false;
+    item.style.zIndex='';
+    save();
+  });
+
+  // ── RESIZE (bottom-right corner) ──
+  const rsz=item.querySelector('.gal-resizer');
+  let rsActive=false,rsX=0,rsY=0,rsW=0,rsH=0;
+  rsz.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();
+    rsz.setPointerCapture(e.pointerId);
+    rsActive=true;
+    rsX=e.clientX;rsY=e.clientY;
+    rsW=item.offsetWidth;rsH=item.offsetHeight;
+  });
+  rsz.addEventListener('pointermove',e=>{
+    if(!rsActive)return;
+    const nw=snapVal(Math.max(60,rsW+(e.clientX-rsX)));
+    const nh=snapVal(Math.max(60,rsH+(e.clientY-rsY)));
+    item.style.width=nw+'px';
+    item.style.height=nh+'px';
+    updateCanvasHeight();
+  });
+  rsz.addEventListener('pointerup',()=>{if(rsActive){rsActive=false;save();}});
+}
+
+function updateCanvasHeight(){
+  const canvas=document.getElementById('gallery-canvas');
+  let maxBottom=200;
+  canvas.querySelectorAll('.gallery-item').forEach(el=>{
+    const b=parseInt(el.style.top||0)+el.offsetHeight;
+    if(b>maxBottom)maxBottom=b;
+  });
+  canvas.style.minHeight=(maxBottom+20)+'px';
+}
+
+function delGalleryPhoto(id){
+  document.getElementById(id)?.remove();
+  updateCanvasHeight();
+  save();
+}
+
+// ── Goals ──
+let gCount=0,gDragSrc=null;
+function addGoal(data){
+  gCount++;
+  const id='g'+gCount;
+  const tile=document.createElement('div');
+  tile.className='goal';tile.id=id;
+  tile.innerHTML=`
+    <button class="goal-del" type="button" onclick="delGoal('${id}')">✕</button>
+    <div class="goal-num" contenteditable spellcheck="false">${data?.num??String(gCount).padStart(2,'0')}</div>
+    <h3 contenteditable spellcheck="false">${data?.title??'Goal Title'}</h3>
+    <p contenteditable>${data?.desc??'Describe this goal — what you want to achieve and how you plan to get there.'}</p>`;
+  document.getElementById('goals-grid').appendChild(tile);
+  bindEdit(tile);save();
+}
+function delGoal(id){document.getElementById(id)?.remove();save();}
+
+// ── Contact items ──
+let cCount=0, cDragSrc=null;
+
+function addContact(data){
+  cCount++;
+  const id='c'+cCount;
+  const item=document.createElement('div');
+  item.className='c-item'; item.id=id;
+  item.innerHTML=`
+    <div class="c-item-drag" title="Drag to reorder">⠿</div>
+    <div class="c-item-body">
+      <div class="c-item-label" contenteditable spellcheck="false">${data?.label??'Method'}</div>
+      <div class="c-item-val" contenteditable spellcheck="false">${data?.val??'your@contact.info'}</div>
+    </div>
+    <div class="c-item-del" title="Remove" onclick="delContact('${id}')">×</div>`;
+  document.getElementById('contact-list').appendChild(item);
+
+  // Drag reorder
+  const dh=item.querySelector('.c-item-drag');
+  dh.addEventListener('mousedown',()=>item.draggable=true);
+  document.addEventListener('mouseup',()=>item.draggable=false,true);
+  item.addEventListener('dragstart',e=>{cDragSrc=item;item.style.opacity='.4';e.dataTransfer.effectAllowed='move';});
+  item.addEventListener('dragend',()=>{item.style.opacity='';item.draggable=false;save();});
+  item.addEventListener('dragover',e=>{e.preventDefault();item.classList.add('drag-over');});
+  item.addEventListener('dragleave',()=>item.classList.remove('drag-over'));
+  item.addEventListener('drop',e=>{
+    e.preventDefault();item.classList.remove('drag-over');
+    if(cDragSrc&&cDragSrc!==item){
+      const list=document.getElementById('contact-list');
+      const arr=[...list.children];
+      arr.indexOf(cDragSrc)<arr.indexOf(item)?item.after(cDragSrc):item.before(cDragSrc);
+      save();
+    }
+  });
+
+  bindEdit(item); save();
+}
+
+function delContact(id){
+  document.getElementById(id)?.remove(); save();
+}
+
+const ok=applyBootstrap()||load();
+if(!ok){
+  addGoal({num:'01',title:'Short-Term · 1–2 Years',desc:'Complete core ECE coursework, secure a research assistant position, and build proficiency in embedded C and FPGA design.'});
+  addGoal({num:'02',title:'Mid-Term · 3–4 Years',desc:'Complete a co-op at a hardware or defense tech company, lead a capstone project, and graduate with honors from Georgia Tech.'});
+  addGoal({num:'03',title:'Long-Term · 5–10 Years',desc:'Work as a systems engineer on autonomous vehicles or spacecraft, and potentially pursue an MS in ECE.'});
+  addProj({title:'Your Discovery Project Title',desc:'Describe your discovery project here — the problem, your approach, the tools you used, and what you found or accomplished.'});
+  addContact({label:'Email',val:'yourname@gatech.edu'});
+  addContact({label:'LinkedIn',val:'linkedin.com/in/yourname'});
+  addContact({label:'GitHub',val:'github.com/yourname'});
+}
+bindEdit();
+</script>
+
+</body></html>
